@@ -6,6 +6,11 @@
   <title>Sistema de Gestão de Casos • Equipe Dr. José Falcão</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900;display=swap" rel="stylesheet">
+
+  <!-- PDF (client-side) -->
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+
   <style>
     :root { --bg:#07111c; --panel:#0b1a2a; --accent:#18c1e8; --gold:#d4af37; }
     body { background-color: var(--bg); color:#e7f3f8; font-family:'Outfit',sans-serif; overflow-x:hidden; }
@@ -22,6 +27,7 @@
       outline: none;
       width: 100%;
     }
+    textarea { resize: vertical; }
     .btn-main {
       background: linear-gradient(90deg, #18c1e8, #0077b6);
       color: white;
@@ -34,7 +40,7 @@
       text-transform: uppercase;
       letter-spacing: 1px;
     }
-    .btn-main:hover { transform: translateY(-4px); box-shadow: 0 10px 30px rgba(24,193,232,0.25); }
+    .btn-main:hover { transform: translateY(-3px); box-shadow: 0 10px 30px rgba(24,193,232,0.25); }
     .btn-gold {
       background: linear-gradient(90deg, #d4af37, #aa8a2e);
       color:#07111c;
@@ -47,7 +53,7 @@
       text-transform: uppercase;
       letter-spacing: 1px;
     }
-    .btn-gold:hover { transform: translateY(-4px); box-shadow: 0 10px 30px rgba(212,175,55,0.22); }
+    .btn-gold:hover { transform: translateY(-3px); box-shadow: 0 10px 30px rgba(212,175,55,0.22); }
     .pill {
       border:1px solid rgba(255,255,255,0.12);
       background: rgba(0,0,0,0.25);
@@ -67,6 +73,7 @@
       cursor:pointer;
       border:1px solid rgba(255,255,255,0.16);
       transition: .2s;
+      flex: 0 0 auto;
     }
     .switch:checked { background: rgba(24,193,232,0.35); border-color: rgba(24,193,232,0.55); }
     .switch:before {
@@ -83,6 +90,22 @@
     }
     .switch:checked:before { left:22px; }
 
+    .tower-strip {
+      border-radius: 18px;
+      padding: 22px 18px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      text-align:center;
+      background: linear-gradient(180deg, rgba(11,26,42,0.9), rgba(7,17,28,0.9));
+      border: 1px solid rgba(255,255,255,0.10);
+      box-shadow: 0 18px 50px rgba(0,0,0,0.35);
+    }
+    .tower-strip.yellow { border-color: rgba(212,175,55,0.55); }
+    .tower-strip.green  { border-color: rgba(34,197,94,0.55); }
+    .tower-strip.red    { border-color: rgba(239,68,68,0.55); }
+    .tower-strip.white  { border-color: rgba(255,255,255,0.55); }
+
     @media print {
       .no-print { display:none !important; }
       body { background:white !important; color:black !important; }
@@ -90,7 +113,7 @@
       .print-muted { color:#333 !important; }
       .print-title { color:#000 !important; }
       .print-border { border-color:#ddd !important; }
-      input { display:none !important; }
+      input, textarea, select { display:none !important; }
     }
   </style>
 </head>
@@ -101,20 +124,22 @@
     <div class="flex items-center gap-3 cursor-pointer" onclick="showTab('home')">
       <div class="w-9 h-9 rounded bg-cyan-500 flex items-center justify-center font-black text-white italic">JF</div>
       <div>
-        <div class="text-[11px] font-black uppercase tracking-widest">Equipe Dr. José. Falcão</div>
+        <div class="text-[11px] font-black uppercase tracking-widest">Equipe Dr. José Falcão</div>
         <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Sistema de Gestão de Casos</div>
       </div>
     </div>
 
-    <div class="flex gap-2">
+    <div class="flex gap-2 flex-wrap justify-end">
       <button onclick="showTab('home')" class="text-[10px] font-black uppercase border border-white/10 px-4 py-2 rounded-lg hover:bg-white/10">Início</button>
       <button onclick="showTab('tower')" class="text-[10px] font-black uppercase border border-white/10 px-4 py-2 rounded-lg hover:bg-white/10">Control Tower</button>
       <button onclick="showTab('novo-caso')" class="text-[10px] font-black uppercase border border-white/10 px-4 py-2 rounded-lg hover:bg-white/10">Analisar Caso</button>
+      <button onclick="openAdmin()" class="text-[10px] font-black uppercase border border-yellow-400/30 px-4 py-2 rounded-lg hover:bg-yellow-400/10">Leads (Admin)</button>
     </div>
   </header>
 
   <main class="max-w-5xl mx-auto">
 
+    <!-- HOME -->
     <section id="tab-home" class="tab-content active">
       <div class="min-h-[70vh] flex flex-col justify-center items-center gap-10">
         <div class="text-center max-w-3xl">
@@ -140,47 +165,59 @@
       </div>
     </section>
 
+    <!-- CONTROL TOWER -->
     <section id="tab-tower" class="tab-content">
       <div class="flex justify-between items-end mb-8">
         <div>
           <h2 class="text-2xl font-black uppercase italic">Control Tower</h2>
           <p class="text-[10px] text-cyan-500 font-black uppercase tracking-widest">Visão operacional</p>
+          <p class="text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-1">
+            Atualiza diariamente • Percentuais nunca abaixo de 87%
+          </p>
         </div>
-        <button onclick="updateTower()" class="bg-white text-black text-[10px] font-black px-4 py-2 rounded uppercase">Atualizar</button>
+        <button onclick="updateTower(true)" class="bg-white text-black text-[10px] font-black px-4 py-2 rounded uppercase">Atualizar</button>
       </div>
 
- 
+      <div class="space-y-4">
+        <div class="tower-strip yellow">
+          <div>
+            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Transação Lei 13.988/2020</p>
+            <p class="text-3xl font-black italic mt-1" id="idx-neg">94%</p>
+          </div>
         </div>
-  
-        <div class="card-premium p-4 border-l-2 border-yellow-400 text-center">
-          <p class="text-[9px] font-bold text-gray-500 uppercase">TRANSAÇÃO LEI 13.988/2020</p>
-          <p class="text-xl font-black italic" id="idx-neg">94%</p>
+
+        <div class="tower-strip green">
+          <div>
+            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">NJP — Duas Etapas</p>
+            <p class="text-3xl font-black italic mt-1" id="idx-pre">89.4%</p>
+          </div>
         </div>
-        <div class="card-premium p-4 border-l-2 border-green-500 text-center">
-          <p class="text-[9px] font-bold text-gray-500 uppercase">NJP - DUAS ETAPAS</p>
-          <p class="text-xl font-black italic" id="idx-pre">89.4%</p>
+
+        <div class="tower-strip red">
+          <div>
+            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Reenquadramento</p>
+            <p class="text-3xl font-black italic mt-1" id="idx-per">91%</p>
+          </div>
         </div>
-     
+
+        <div class="tower-strip white">
+          <div>
+            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Total Casos</p>
+            <p class="text-3xl font-black italic mt-1" id="idx-casos">14.280</p>
+          </div>
         </div>
-        <div class="card-premium p-4 border-l-2 border-red-500 text-center">
-          <p class="text-[9px] font-bold text-gray-500 uppercase">REENQUADRAMENTO</p>
-          <p class="text-xl font-black italic" id="idx-per">91%</p>
-        </div>
-        <div class="card-premium p-4 border-l-2 border-white text-center">
-          <p class="text-[9px] font-bold text-gray-500 uppercase">Total Casos</p>
-          <p class="text-xl font-black italic" id="idx-casos">14.280</p>
-        </div> 
       </div>
 
-      <div class="card-premium p-6">
+      <div class="card-premium p-6 mt-6">
         <h4 class="text-xs font-black uppercase mb-4 opacity-60 italic">Pulso Operacional</h4>
         <div class="h-2 bg-white/5 rounded-full overflow-hidden mb-2">
-          <div class="h-full bg-cyan-500 w-[92%]"></div>
+          <div class="h-full bg-cyan-500" id="pulseBar" style="width:92%"></div>
         </div>
         <p class="text-[10px] font-bold uppercase tracking-widest">Indicador de estabilidade</p>
       </div>
     </section>
 
+    <!-- NOVO CASO -->
     <section id="tab-novo-caso" class="tab-content">
       <div class="text-center mb-8">
         <h2 class="text-2xl font-black uppercase italic">Análise de Novo Caso</h2>
@@ -189,11 +226,26 @@
         </p>
       </div>
 
+      <!-- INPUTS -->
       <div class="card-premium p-8 mb-6 no-print">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
           <input type="text" id="c_nome" placeholder="Nome da Empresa" oninput="syncHeader()">
           <input type="text" id="c_cnpj" placeholder="CNPJ" oninput="maskCNPJ(this); syncHeader()">
           <input type="text" id="c_valor" placeholder="Valor do Débito (R$)" oninput="maskMoney(this); calcAll(); syncHeader()">
+
+          <!-- Whats: sem truncar / aceitando 9 / aceitando +55 -->
+          <input
+            type="text"
+            id="c_whats"
+            placeholder="WhatsApp (55DDD9XXXXYYYY)"
+            inputmode="numeric"
+            autocomplete="off"
+            oninput="syncHeader()"
+          >
+        </div>
+
+        <div class="mt-2 text-[10px] text-gray-500 font-bold uppercase tracking-widest">
+          Dica: pode colar assim: <span class="text-gray-300">+55 (51) 9 9999-9999</span> que o sistema normaliza.
         </div>
 
         <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -201,7 +253,7 @@
             <input id="flag_negociar" type="checkbox" class="switch" onchange="toggleModules(); calcAll();">
             <div>
               <div class="text-[11px] font-black uppercase tracking-widest text-cyan-300">Negociar</div>
-              <div class="text-[10px] text-gray-400 font-semibold">ANALISE DE PARCELAMENTO</div>
+              <div class="text-[10px] text-gray-400 font-semibold">Análise de Parcelamento</div>
             </div>
           </div>
 
@@ -209,7 +261,7 @@
             <input id="flag_execucao" type="checkbox" class="switch" onchange="toggleModules(); calcAll();">
             <div>
               <div class="text-[11px] font-black uppercase tracking-widest text-yellow-200">Defesa em Execução</div>
-              <div class="text-[10px] text-gray-400 font-semibold">BLINDAGEM PATRIMONIAL</div>
+              <div class="text-[10px] text-gray-400 font-semibold">Blindagem Patrimonial</div>
             </div>
           </div>
         </div>
@@ -241,8 +293,14 @@
             </div>
           </div>
         </div>
+
+        <!-- OBS FINAIS -->
+        <div class="mt-6">
+          <textarea id="c_obs" rows="3" placeholder="Observações finais (vai junto na mensagem do WhatsApp)" oninput="autoSaveLeadDebounced()"></textarea>
+        </div>
       </div>
 
+      <!-- HEADER RELATÓRIO -->
       <div id="print-header" class="card-premium p-6 mb-6">
         <div class="flex items-start justify-between gap-4">
           <div>
@@ -252,7 +310,7 @@
               Empresa: <b id="h_nome">—</b> • CNPJ: <b id="h_cnpj">—</b> • Débito: <b id="h_val">—</b>
             </div>
             <div class="text-[10px] mt-1 text-gray-400 print-muted">
-              Gerado em: <b id="h_data">—</b>
+              Whats: <b id="h_whats">—</b> • Gerado em: <b id="h_data">—</b>
             </div>
           </div>
 
@@ -268,6 +326,7 @@
 
       <div id="print-area-all" class="space-y-6">
 
+        <!-- NEGOCIAR -->
         <div id="mod-neg" class="hidden">
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div class="card-premium p-6 border-t-4 border-red-500/50">
@@ -311,25 +370,20 @@
           </div>
         </div>
 
+        <!-- EXECUÇÃO -->
         <div id="mod-exec" class="hidden">
           <div class="card-premium p-6">
             <div class="flex items-start justify-between gap-4">
               <div>
                 <h3 class="text-sm font-black uppercase italic">Garantias e Alternativas</h3>
-
-                <!-- TEXTO EXPLICATIVO (como tu pediu) -->
                 <div class="mt-3 text-[12px] leading-relaxed text-gray-200 print-muted space-y-2">
                   <p>
                     <b>Diferenças práticas:</b> pagamento integral exige desembolso imediato; carta bancária normalmente demanda cobertura parcial do débito;
                     <b class="text-red-300">imóvel próprio</b> pode expor o patrimônio e acelerar constrição; já o <b class="text-green-300">imóvel de terceiro</b> permite estruturar a garantia
                     com custo previsível e manter o patrimônio da empresa mais protegido.
                   </p>
-                  <p class="text-green-300 font-black uppercase tracking-widest">
-                    Melhor caminho: Imóvel de terceiro.
-                  </p>
-                  <p class="text-yellow-200 font-black uppercase tracking-widest">
-                    Alerta: poucas matrículas disponíveis para uso. Faça reserva imediata.
-                  </p>
+                  <p class="text-green-300 font-black uppercase tracking-widest">Melhor caminho: Imóvel de terceiro.</p>
+                  <p class="text-yellow-200 font-black uppercase tracking-widest">Alerta: poucas matrículas disponíveis para uso. Faça reserva imediata.</p>
                 </div>
               </div>
 
@@ -353,34 +407,126 @@
             </p>
           </div>
         </div>
+
       </div>
 
+      <!-- AÇÕES -->
       <div class="mt-8 no-print">
-        <button onclick="window.print()" class="w-full btn-main text-sm">Gerar Relatório em PDF (Simulação + Garantias)</button>
+        <button onclick="downloadPDF()" class="w-full btn-main text-sm">Baixar PDF do Relatório</button>
+      </div>
+      <div class="mt-3 no-print">
+        <button onclick="sendWhatsAppWithPDF()" class="w-full btn-gold text-sm">Enviar no WhatsApp (Texto + PDF)</button>
+      </div>
+    </section>
+
+    <!-- ADMIN -->
+    <section id="tab-admin" class="tab-content">
+      <div class="flex justify-between items-end mb-6">
+        <div>
+          <h2 class="text-2xl font-black uppercase italic">Leads (Admin)</h2>
+          <p class="text-[10px] text-yellow-200 font-black uppercase tracking-widest">Área gerenciada por senha</p>
+        </div>
+        <div class="flex gap-2">
+          <button onclick="exportLeadsJSON()" class="text-[10px] font-black uppercase border border-white/10 px-4 py-2 rounded-lg hover:bg-white/10">Exportar JSON</button>
+          <button onclick="logoutAdmin()" class="text-[10px] font-black uppercase border border-red-500/30 px-4 py-2 rounded-lg hover:bg-red-500/10">Sair</button>
+        </div>
+      </div>
+
+      <div class="card-premium p-6 mb-6">
+        <div class="grid grid-cols-1 md:grid-cols-6 gap-3">
+          <input id="a_empresa" placeholder="Empresa">
+          <input id="a_cnpj" placeholder="CNPJ" oninput="maskCNPJ(this)">
+          <input id="a_debito" placeholder="Débito (R$)" oninput="maskMoney(this)">
+          <input id="a_whats" placeholder="Whats (55DDD9XXXXYYYY)">
+          <select id="a_status">
+            <option value="NOVO">NOVO</option>
+            <option value="CONTATADO">CONTATADO</option>
+            <option value="PROPOSTA_ENVIADA">PROPOSTA_ENVIADA</option>
+            <option value="GANHO">GANHO</option>
+            <option value="PERDIDO">PERDIDO</option>
+          </select>
+          <button onclick="addLeadAdmin()" class="bg-white text-black text-[10px] font-black px-4 py-2 rounded uppercase">Salvar</button>
+        </div>
+        <textarea id="a_obs" class="mt-3" placeholder="Observações (opcional)"></textarea>
+      </div>
+
+      <div class="card-premium p-6">
+        <div class="flex items-center justify-between gap-3 mb-4">
+          <div class="flex gap-2 w-full">
+            <input id="f_q" placeholder="Buscar (empresa/cnpj/whats)" oninput="renderLeads()">
+            <select id="f_s" class="max-w-[220px]" onchange="renderLeads()">
+              <option value="">Todos</option>
+              <option value="NOVO">NOVO</option>
+              <option value="CONTATADO">CONTATADO</option>
+              <option value="PROPOSTA_ENVIADA">PROPOSTA_ENVIADA</option>
+              <option value="GANHO">GANHO</option>
+              <option value="PERDIDO">PERDIDO</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="overflow-auto">
+          <table class="w-full text-[12px]">
+            <thead class="text-[10px] uppercase tracking-widest text-gray-400">
+              <tr class="border-b border-white/10">
+                <th class="text-left p-3">Empresa</th>
+                <th class="text-left p-3">CNPJ</th>
+                <th class="text-left p-3">Débito</th>
+                <th class="text-left p-3">Whats</th>
+                <th class="text-left p-3">Status</th>
+                <th class="text-left p-3">Data</th>
+                <th class="text-left p-3">Ações</th>
+              </tr>
+            </thead>
+            <tbody id="leadsBody"></tbody>
+          </table>
+        </div>
       </div>
     </section>
 
   </main>
 
-  <script>
-    function showTab(id) {
-      document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-      document.getElementById('tab-' + id).classList.add('active');
-      window.scrollTo(0, 0);
-      if (id === 'novo-caso') {
-        syncHeader();
-        toggleModules();
-        renderExecOptions();
-        calcAll();
-      }
-    }
+  <!-- Overlay Login Admin -->
+  <div id="adminOverlay" class="fixed inset-0 bg-black/70 hidden items-center justify-center p-4 z-50">
+    <div class="card-premium p-6 w-full max-w-md">
+      <div class="flex items-start justify-between gap-3">
+        <div>
+          <div class="text-[12px] font-black uppercase tracking-widest text-yellow-200">Acesso Admin</div>
+          <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">Senha padrão: 1234</div>
+        </div>
+        <button onclick="closeAdminOverlay()" class="text-[12px] font-black uppercase border border-white/10 px-3 py-2 rounded-lg hover:bg-white/10">Fechar</button>
+      </div>
 
+      <div class="mt-4">
+        <input id="adminPass" type="password" placeholder="Digite a senha">
+        <button onclick="loginAdmin()" class="mt-3 w-full btn-gold text-sm">Entrar</button>
+        <p id="adminErr" class="text-[11px] mt-3 text-red-300 font-bold hidden">Senha inválida.</p>
+
+        <!-- Só aparece depois de logado -->
+        <div id="changePassBox" class="mt-6 border-t border-white/10 pt-4 hidden">
+          <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-2">Trocar senha</div>
+          <input id="newPass" type="password" placeholder="Nova senha">
+          <button onclick="changeAdminPass()" class="mt-2 w-full text-[11px] font-black uppercase border border-yellow-400/30 px-4 py-3 rounded-xl hover:bg-yellow-400/10">
+            Atualizar senha
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ==========================
+    // Utils
+    // ==========================
+    function nowBR() {
+      try { return new Date().toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }); }
+      catch(e) { return new Date().toLocaleString(); }
+    }
     function maskMoney(i) {
       let v = i.value.replace(/\D/g, "");
       v = (v / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
       i.value = v !== "0,00" ? "R$ " + v : "";
     }
-
     function maskCNPJ(i) {
       let v = i.value.replace(/\D/g, "");
       if (v.length > 14) v = v.slice(0, 14);
@@ -390,40 +536,78 @@
       v = v.replace(/(\d{4})(\d)/, "$1-$2");
       i.value = v;
     }
-
     function parseVal(v) {
       return parseFloat((v || "").replace(/[^\d,]/g, "").replace(",", ".")) || 0;
     }
-
     const fmt = (v) => (v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
-    function updateTower() {
-      document.getElementById('idx-exe').innerText = Math.floor(Math.random() * (92 - 85) + 85) + "%";
-      document.getElementById('idx-neg').innerText = Math.floor(Math.random() * (98 - 90) + 90) + "%";
-      document.getElementById('idx-pre').innerText = (Math.random() * (15 - 10) + 10).toFixed(1) + "%";
-      document.getElementById('idx-per').innerText = Math.floor(Math.random() * (95 - 88) + 88) + "%";
+    function escapeHtml(str){
+      return (str || "").toString()
+        .replaceAll("&","&amp;").replaceAll("<","&lt;")
+        .replaceAll(">","&gt;").replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
     }
 
-    function nowBR() {
-      try { return new Date().toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }); }
-      catch(e) { return new Date().toLocaleString(); }
+    // ==========================
+    // Tabs
+    // ==========================
+    function showTab(id) {
+      document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+      const el = document.getElementById('tab-' + id);
+      if (el) el.classList.add('active');
+      window.scrollTo(0, 0);
+
+      if (id === 'novo-caso') {
+        syncHeader();
+        toggleModules();
+        renderExecOptions();
+        calcAll();
+      }
+      if (id === 'tower') updateTower(false);
+      if (id === 'admin') {
+        if (!isAuthed()) { openAdmin(); return; }
+        renderLeads();
+      }
     }
 
+    // ==========================
+    // Whats normalize (não come 9)
+    // ==========================
+    function normalizePhone(raw){
+      let p = (raw || "").toString().trim();
+      // remove tudo que não é dígito
+      p = p.replace(/\D/g, "");
+      // se começar com 0 repetido, limpa
+      p = p.replace(/^0+/, "");
+      return p; // aceita 55... ou ddd+numero
+    }
+
+    // ==========================
+    // Header sync (relatório) + autosave
+    // ==========================
     function syncHeader() {
       const nome = (document.getElementById('c_nome').value || "—").trim() || "—";
       const cnpj = (document.getElementById('c_cnpj').value || "—").trim() || "—";
-      const val  = document.getElementById('c_valor').value || "—";
+      const val  = (document.getElementById('c_valor').value || "—").trim() || "—";
+      const whats = (document.getElementById('c_whats').value || "—").trim() || "—";
+
       document.getElementById('h_nome').innerText = nome;
       document.getElementById('h_cnpj').innerText = cnpj;
-      document.getElementById('h_val').innerText  = val.trim() || "—";
+      document.getElementById('h_val').innerText  = val;
+      document.getElementById('h_whats').innerText = whats;
       document.getElementById('h_data').innerText = nowBR();
 
       const pro = document.getElementById('f_protesto')?.checked;
       const can = document.getElementById('f_cancel')?.checked;
       document.getElementById('tag_pro').classList.toggle('hidden', !pro);
       document.getElementById('tag_can').classList.toggle('hidden', !can);
+
+      autoSaveLeadDebounced();
     }
 
+    // ==========================
+    // Modules
+    // ==========================
     function toggleModules() {
       const neg = document.getElementById('flag_negociar').checked;
       const exe = document.getElementById('flag_execucao').checked;
@@ -440,9 +624,12 @@
       renderExecOptions();
     }
 
+    // ==========================
+    // Negociar calc
+    // ==========================
     function calcNeg() {
       const v = parseVal(document.getElementById('c_valor').value);
-      const m = parseInt(document.getElementById('n_meses').value);
+      const m = parseInt(document.getElementById('n_meses').value || "145", 10);
 
       const cEnt = v * 0.10;
       document.getElementById('n_c_ent').innerText  = fmt(cEnt);
@@ -452,8 +639,13 @@
       document.getElementById('n_f_eco').innerText  = fmt(fEco);
       document.getElementById('n_f_parc').innerText = fmt((v - fEco) / (m || 1));
       document.getElementById('n_txt_meses').innerText = m || 145;
+
+      autoSaveLeadDebounced();
     }
 
+    // ==========================
+    // Exec options
+    // ==========================
     function execCard({ title, value, note, accent="border-white/10", badge="" }) {
       return `
         <div class="card-premium p-6 border ${accent}">
@@ -502,7 +694,6 @@
         badge
       });
 
-      // Imóvel próprio — alerta máximo
       wrap.innerHTML += `
         <div class="card-premium p-6 border-2 border-red-500 shadow-xl">
           <div class="flex items-start justify-between gap-3">
@@ -510,13 +701,10 @@
             <span class="text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full bg-red-500/20 border border-red-500/30">ALERTA</span>
           </div>
           <p class="text-2xl font-black mt-3 text-red-400">RISCO DE PENHORA IMEDIATA</p>
-          <p class="text-[11px] mt-2 text-gray-200 font-bold uppercase tracking-widest">
-            Exposição direta do patrimônio.
-          </p>
+          <p class="text-[11px] mt-2 text-gray-200 font-bold uppercase tracking-widest">Exposição direta do patrimônio.</p>
         </div>
       `;
 
-      // Garantia de terceiros — destaque em verde + chamada forte
       const ter = v * 0.11;
       wrap.innerHTML += `
         <div class="card-premium p-6 border-2 border-green-500/60 shadow-xl md:col-span-2">
@@ -526,18 +714,12 @@
           </div>
 
           <div class="mt-3 p-4 rounded-xl bg-green-500/10 border border-green-500/20">
-            <p class="text-[11px] font-black uppercase tracking-widest text-green-300">
-              Aplique garantia de terceiro para maior economia.
-            </p>
-            <p class="text-[10px] mt-2 text-yellow-200 font-black uppercase tracking-widest">
-              Alerta: poucas matrículas disponíveis para uso. Faça reserva imediata.
-            </p>
+            <p class="text-[11px] font-black uppercase tracking-widest text-green-300">Aplique garantia de terceiro para maior economia.</p>
+            <p class="text-[10px] mt-2 text-yellow-200 font-black uppercase tracking-widest">Alerta: poucas matrículas disponíveis para uso. Faça reserva imediata.</p>
           </div>
 
           <p class="text-xl font-black mt-4">${fmt(ter)}</p>
-          <p class="text-[10px] mt-2 text-gray-400 font-bold uppercase tracking-widest print-muted">
-            Custo: 11% do débito
-          </p>
+          <p class="text-[10px] mt-2 text-gray-400 font-bold uppercase tracking-widest print-muted">Custo: 11% do débito</p>
 
           <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3 border-t border-white/10 pt-4 print-border">
             <div class="flex justify-between text-[11px]">
@@ -562,16 +744,475 @@
       document.getElementById('tag_can').classList.toggle('hidden', !can);
 
       syncHeader();
+      autoSaveLeadDebounced();
     }
 
     function calcAll() {
       if (document.getElementById('flag_negociar').checked) calcNeg();
       if (document.getElementById('flag_execucao').checked) renderExecOptions();
       syncHeader();
+      autoSaveLeadDebounced();
     }
 
+    // ==========================
+    // WhatsApp message
+    // ==========================
+    function buildWhatsMessage(){
+      const empresa = (document.getElementById('c_nome').value || "—").trim();
+      const cnpj = (document.getElementById('c_cnpj').value || "—").trim();
+      const debito = (document.getElementById('c_valor').value || "—").trim();
+      const obs = (document.getElementById('c_obs').value || "").trim();
+
+      const neg = document.getElementById('flag_negociar').checked;
+      const exe = document.getElementById('flag_execucao').checked;
+      const cit = document.getElementById('f_citacao')?.checked;
+      const pro = document.getElementById('f_protesto')?.checked;
+      const can = document.getElementById('f_cancel')?.checked;
+
+      let msg =
+`Equipe Dr. José Falcão
+Relatório de Análise
+
+Empresa: ${empresa}
+CNPJ: ${cnpj}
+Débito: ${debito}
+
+Frentes: ${[neg?"Negociar":null, exe?"Defesa em Execução":null].filter(Boolean).join(" + ") || "—"}
+Sinalizadores: ${[
+  cit ? "Citação: Sim" : "Citação: —",
+  pro ? "Protesto: Sim" : "Protesto: Não",
+  can ? "Histórico: Cancelamento" : "Histórico: —"
+].join(" • ")}
+
+Vou te enviar o PDF do relatório aqui.`;
+
+      if (obs) msg += `\n\nObservações:\n${obs}`;
+
+      return msg;
+    }
+
+    function openWaText(phone, msg){
+      const url = `https://wa.me/${encodeURIComponent(phone)}?text=${encodeURIComponent(msg)}`;
+      window.open(url, "_blank");
+    }
+
+    // ==========================
+    // PDF generator (blob)
+    // ==========================
+    async function generatePdfBlob(){
+      const target = document.createElement("div");
+      target.style.background = "#07111c";
+      target.style.padding = "16px";
+      target.style.position = "fixed";
+      target.style.left = "-99999px";
+      target.style.top = "0";
+      target.style.width = "900px";
+
+      const h = document.getElementById("print-header").cloneNode(true);
+      const a = document.getElementById("print-area-all").cloneNode(true);
+      target.appendChild(h);
+      target.appendChild(a);
+      document.body.appendChild(target);
+
+      const canvas = await html2canvas(target, { scale: 2, useCORS: true });
+      const imgData = canvas.toDataURL("image/png");
+
+      const { jsPDF } = window.jspdf;
+      const pdf = new jsPDF("p", "mm", "a4");
+
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+
+      const imgWidth = pageWidth;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+      let heightLeft = imgHeight;
+      let position = 0;
+
+      pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+
+      while (heightLeft > 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+
+      document.body.removeChild(target);
+
+      return pdf.output("blob");
+    }
+
+    async function downloadPDF(){
+      autoSaveLead(); // garante
+      const blob = await generatePdfBlob();
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `Relatorio-${(document.getElementById('c_nome').value||'empresa').replace(/\s+/g,'_')}.pdf`;
+      a.click();
+      URL.revokeObjectURL(a.href);
+    }
+
+    // ==========================
+    // WhatsApp (texto + PDF)
+    // ==========================
+    async function sendWhatsAppWithPDF(){
+      autoSaveLead(); // obrigatório
+
+      const raw = document.getElementById('c_whats').value || "";
+      const phone = normalizePhone(raw);
+      if (!phone) { alert("Preenche o WhatsApp (55DDD9XXXXYYYY)."); return; }
+
+      const msg = buildWhatsMessage();
+
+      // gera PDF
+      const blob = await generatePdfBlob();
+      const fileName = `Relatorio-${(document.getElementById('c_nome').value||'empresa').replace(/\s+/g,'_')}.pdf`;
+      const file = new File([blob], fileName, { type: "application/pdf" });
+
+      // tenta share com arquivo (melhor no mobile/tablet)
+      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+        try {
+          await navigator.share({ text: msg, files: [file] });
+          return;
+        } catch(e) {
+          // se usuário cancelar, cai no fallback abaixo
+        }
+      }
+
+      // fallback: baixa e abre wa.me com texto (anexo manual)
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = fileName;
+      a.click();
+      URL.revokeObjectURL(a.href);
+
+      openWaText(phone, msg + "\n\n(Obs: o PDF foi baixado — anexa ele aqui no WhatsApp.)");
+    }
+
+    // ==========================
+    // Leads (Auto-save obrigatório)
+    // ==========================
+    const LEADS_KEY = "jf_leads_v1";
+    const PASS_KEY  = "jf_admin_pass_v1";
+    const AUTH_KEY  = "jf_admin_authed_v1";
+
+    function getPass(){ return localStorage.getItem(PASS_KEY) || "1234"; }
+    function setPass(p){ localStorage.setItem(PASS_KEY, p); }
+    function isAuthed(){ return localStorage.getItem(AUTH_KEY) === "1"; }
+    function setAuthed(v){ localStorage.setItem(AUTH_KEY, v ? "1" : "0"); }
+
+    function leadsLoad(){ try { return JSON.parse(localStorage.getItem(LEADS_KEY) || "[]"); } catch(e){ return []; } }
+    function leadsSave(rows){ localStorage.setItem(LEADS_KEY, JSON.stringify(rows)); }
+
+    function uid(){
+      try { return crypto.randomUUID(); }
+      catch(e){ return String(Date.now()) + Math.random().toString(16).slice(2); }
+    }
+
+    function autoSaveLead(){
+      const empresa = (document.getElementById('c_nome').value || "").trim();
+      const cnpj = (document.getElementById('c_cnpj').value || "").trim();
+      const debitoStr = (document.getElementById('c_valor').value || "").trim();
+      const debito = parseVal(debitoStr);
+      const whats = normalizePhone(document.getElementById('c_whats').value || "");
+      const obs = (document.getElementById('c_obs').value || "").trim();
+
+      // regra: só salva quando tiver o mínimo
+      if (!empresa || !whats || !debito) return;
+
+      const rows = leadsLoad();
+
+      // UPSERT: tenta achar por CNPJ (se tiver), senão por Whats+Empresa
+      const keyCnpj = cnpj && cnpj !== "—" ? cnpj : null;
+      let idx = -1;
+      if (keyCnpj) idx = rows.findIndex(r => (r.cnpj||"") === keyCnpj);
+      if (idx < 0) idx = rows.findIndex(r => (r.whats||"") === whats && (r.empresa||"") === empresa);
+
+      const payload = {
+        id: idx >= 0 ? rows[idx].id : uid(),
+        empresa,
+        cnpj,
+        debito,
+        debitoFmt: debitoStr || fmt(debito),
+        whats,
+        status: idx >= 0 ? (rows[idx].status || "NOVO") : "NOVO",
+        obs,
+        data: nowBR()
+      };
+
+      if (idx >= 0) {
+        rows[idx] = { ...rows[idx], ...payload };
+      } else {
+        rows.unshift(payload);
+      }
+      leadsSave(rows);
+    }
+
+    let leadTimer = null;
+    function autoSaveLeadDebounced(){
+      clearTimeout(leadTimer);
+      leadTimer = setTimeout(() => autoSaveLead(), 450);
+    }
+
+    // ==========================
+    // Admin
+    // ==========================
+    function openAdmin(){
+      if (isAuthed()) { showTab('admin'); renderLeads(); return; }
+      const o = document.getElementById('adminOverlay');
+      o.classList.remove('hidden');
+      o.classList.add('flex');
+      document.getElementById('adminErr').classList.add('hidden');
+      document.getElementById('adminPass').value = "";
+      document.getElementById('changePassBox').classList.add('hidden'); // só depois do login
+      document.getElementById('newPass').value = "";
+    }
+    function closeAdminOverlay(){
+      const o = document.getElementById('adminOverlay');
+      o.classList.add('hidden');
+      o.classList.remove('flex');
+    }
+    function loginAdmin(){
+      const p = document.getElementById('adminPass').value || "";
+      if (p === getPass()) {
+        setAuthed(true);
+        document.getElementById('changePassBox').classList.remove('hidden');
+        closeAdminOverlay();
+        showTab('admin');
+        renderLeads();
+      } else {
+        document.getElementById('adminErr').classList.remove('hidden');
+      }
+    }
+    function logoutAdmin(){
+      setAuthed(false);
+      showTab('home');
+    }
+    function changeAdminPass(){
+      if (!isAuthed()) { alert("Faz login primeiro."); return; }
+      const np = (document.getElementById('newPass').value || "").trim();
+      if (np.length < 4) { alert("Senha muito curta (mínimo 4)."); return; }
+      setPass(np);
+      document.getElementById('newPass').value = "";
+      alert("Senha atualizada.");
+    }
+
+    function addLeadAdmin(){
+      if (!isAuthed()) { alert("Área protegida. Faz login."); return; }
+
+      const empresa = (document.getElementById('a_empresa').value || "").trim();
+      const cnpj = (document.getElementById('a_cnpj').value || "").trim();
+      const debitoStr = document.getElementById('a_debito').value || "";
+      const debito = parseVal(debitoStr);
+      const whats = normalizePhone(document.getElementById('a_whats').value || "");
+      const status = document.getElementById('a_status').value || "NOVO";
+      const obs = (document.getElementById('a_obs').value || "").trim();
+
+      if (!empresa) { alert("Preenche Empresa."); return; }
+      if (!whats) { alert("Preenche Whats."); return; }
+
+      const rows = leadsLoad();
+      rows.unshift({
+        id: uid(),
+        empresa, cnpj,
+        debito,
+        debitoFmt: debitoStr || fmt(debito),
+        whats,
+        status,
+        obs,
+        data: nowBR()
+      });
+      leadsSave(rows);
+
+      document.getElementById('a_empresa').value = "";
+      document.getElementById('a_cnpj').value = "";
+      document.getElementById('a_debito').value = "";
+      document.getElementById('a_whats').value = "";
+      document.getElementById('a_obs').value = "";
+      document.getElementById('a_status').value = "NOVO";
+
+      renderLeads();
+    }
+
+    function renderLeads(){
+      if (!isAuthed()) return;
+
+      const rows = leadsLoad();
+      const q = (document.getElementById('f_q')?.value || "").toLowerCase().trim();
+      const s = (document.getElementById('f_s')?.value || "");
+
+      const filtered = rows.filter(r => {
+        const hitQ = !q || (
+          (r.empresa || "").toLowerCase().includes(q) ||
+          (r.cnpj || "").toLowerCase().includes(q) ||
+          (r.whats || "").includes(q)
+        );
+        const hitS = !s || r.status === s;
+        return hitQ && hitS;
+      });
+
+      const tbody = document.getElementById('leadsBody');
+      tbody.innerHTML = filtered.map(r => `
+        <tr class="border-t border-white/10">
+          <td class="p-3 font-bold">${escapeHtml(r.empresa)}</td>
+          <td class="p-3 text-gray-300">${escapeHtml(r.cnpj || "—")}</td>
+          <td class="p-3 font-black">${escapeHtml(r.debitoFmt || fmt(r.debito || 0))}</td>
+          <td class="p-3">${escapeHtml(r.whats)}</td>
+          <td class="p-3">
+            <select class="text-[11px]" onchange="setLeadStatus('${r.id}', this.value)">
+              ${["NOVO","CONTATADO","PROPOSTA_ENVIADA","GANHO","PERDIDO"].map(x => `
+                <option value="${x}" ${r.status===x?"selected":""}>${x}</option>
+              `).join("")}
+            </select>
+          </td>
+          <td class="p-3 text-gray-400">${escapeHtml(r.data || "—")}</td>
+          <td class="p-3">
+            <button class="text-[10px] font-black uppercase border border-white/10 px-3 py-2 rounded-lg hover:bg-white/10"
+              onclick="loadLeadIntoCase('${r.id}')">Carregar</button>
+            <button class="text-[10px] font-black uppercase border border-red-500/30 px-3 py-2 rounded-lg hover:bg-red-500/10 ml-2"
+              onclick="deleteLead('${r.id}')">Excluir</button>
+          </td>
+        </tr>
+      `).join("");
+    }
+
+    function setLeadStatus(id, status){
+      const rows = leadsLoad();
+      const i = rows.findIndex(x => x.id === id);
+      if (i >= 0) { rows[i].status = status; leadsSave(rows); }
+    }
+
+    function deleteLead(id){
+      if (!confirm("Excluir esse lead?")) return;
+      leadsSave(leadsLoad().filter(x => x.id !== id));
+      renderLeads();
+    }
+
+    function loadLeadIntoCase(id){
+      const r = leadsLoad().find(x => x.id === id);
+      if (!r) return;
+
+      document.getElementById('c_nome').value = r.empresa || "";
+      document.getElementById('c_cnpj').value = r.cnpj || "";
+      document.getElementById('c_valor').value = r.debitoFmt || "";
+      document.getElementById('c_whats').value = r.whats || "";
+      document.getElementById('c_obs').value = r.obs || "";
+
+      showTab('novo-caso');
+      calcAll();
+      syncHeader();
+    }
+
+    function exportLeadsJSON(){
+      if (!isAuthed()) { alert("Faz login."); return; }
+      const rows = leadsLoad();
+      const blob = new Blob([JSON.stringify(rows, null, 2)], { type: "application/json" });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = "leads-jfalcao.json";
+      a.click();
+      URL.revokeObjectURL(a.href);
+    }
+
+    // ==========================
+    // Control Tower (diário)
+    // ==========================
+    const TOWER_KEY = "jf_tower_daily_v1";
+
+    function ymd(d=new Date()){
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth()+1).padStart(2,"0");
+      const dd = String(d.getDate()).padStart(2,"0");
+      return `${yyyy}-${mm}-${dd}`;
+    }
+    function hashSeed(str){
+      let h = 2166136261;
+      for (let i=0;i<str.length;i++){
+        h ^= str.charCodeAt(i);
+        h = Math.imul(h, 16777619);
+      }
+      return (h >>> 0);
+    }
+    function randFrom(seed){
+      let t = seed + 0x6D2B79F5;
+      return function(){
+        t += 0x6D2B79F5;
+        let x = Math.imul(t ^ (t >>> 15), 1 | t);
+        x ^= x + Math.imul(x ^ (x >>> 7), 61 | x);
+        return ((x ^ (x >>> 14)) >>> 0) / 4294967296;
+      }
+    }
+    function clamp(n, a, b){ return Math.max(a, Math.min(b, n)); }
+
+    function towerDailyBase(){
+      const today = ymd();
+      const saved = JSON.parse(localStorage.getItem(TOWER_KEY) || "null");
+      if (saved && saved.day === today) return saved;
+
+      const baseCases = 14280;
+      const startDay = "2026-03-01";
+      const days = Math.max(0, Math.floor((new Date(today) - new Date(startDay)) / (1000*60*60*24)));
+      const incSteps = Math.floor(days / 2);
+
+      const r = randFrom(hashSeed("cases-"+today));
+      let total = baseCases;
+      for (let i=0;i<incSteps;i++){
+        total += Math.floor(20 + r()*41);
+      }
+
+      const rr = randFrom(hashSeed("pct-"+today));
+      const neg = clamp(87 + rr()*13, 87, 99.8);
+      const pre = clamp(87 + rr()*12.5, 87, 99.4);
+      const per = clamp(87 + rr()*13, 87, 99.9);
+
+      const data = {
+        day: today,
+        total,
+        neg,
+        pre,
+        per,
+        pulse: clamp(88 + rr()*11, 88, 98.5)
+      };
+
+      localStorage.setItem(TOWER_KEY, JSON.stringify(data));
+      return data;
+    }
+
+    function updateTower(forceShuffleWithinDay){
+      const base = towerDailyBase();
+      let neg = base.neg, pre = base.pre, per = base.per, pulse = base.pulse, total = base.total;
+
+      if (forceShuffleWithinDay){
+        const r = randFrom(hashSeed("click-"+ymd()+"-"+Date.now()));
+        neg = clamp(base.neg + (r()-0.5)*1.2, 87, 99.9);
+        pre = clamp(base.pre + (r()-0.5)*1.2, 87, 99.9);
+        per = clamp(base.per + (r()-0.5)*1.2, 87, 99.9);
+        pulse = clamp(base.pulse + (r()-0.5)*2.0, 88, 99);
+      }
+
+      document.getElementById('idx-neg').innerText = `${neg.toFixed(0)}%`;
+      document.getElementById('idx-pre').innerText = `${pre.toFixed(1)}%`;
+      document.getElementById('idx-per').innerText = `${per.toFixed(0)}%`;
+      document.getElementById('idx-casos').innerText = total.toLocaleString('pt-BR');
+
+      document.getElementById('pulseBar').style.width = `${pulse.toFixed(1)}%`;
+    }
+
+    // ==========================
+    // Auth
+    // ==========================
+    function getPass(){ return localStorage.getItem(PASS_KEY) || "1234"; }
+    function setPass(p){ localStorage.setItem(PASS_KEY, p); }
+    function isAuthed(){ return localStorage.getItem(AUTH_KEY) === "1"; }
+    function setAuthed(v){ localStorage.setItem(AUTH_KEY, v ? "1" : "0"); }
+
+    // ==========================
+    // Init
+    // ==========================
     (function init(){
-      updateTower();
+      updateTower(false);
       syncHeader();
       toggleModules();
       renderExecOptions();
