@@ -1,0 +1,583 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sistema de Gestão de Casos • Equipe Dr. J. Falcão</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900;display=swap" rel="stylesheet">
+  <style>
+    :root { --bg:#07111c; --panel:#0b1a2a; --accent:#18c1e8; --gold:#d4af37; }
+    body { background-color: var(--bg); color:#e7f3f8; font-family:'Outfit',sans-serif; overflow-x:hidden; }
+    .card-premium { background: linear-gradient(180deg, #0b1a2a, #07111c); border:1px solid rgba(255,255,255,0.1); border-radius:16px; transition:0.25s; }
+    .tab-content { display:none; }
+    .tab-content.active { display:block; animation:fadeIn .35s ease-out; }
+    @keyframes fadeIn { from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:translateY(0);} }
+    input, select, textarea {
+      background: rgba(255,255,255,0.05)!important;
+      border: 1px solid rgba(255,255,255,0.15)!important;
+      color: white!important;
+      border-radius: 12px!important;
+      padding: 12px!important;
+      outline: none;
+      width: 100%;
+    }
+    .btn-main {
+      background: linear-gradient(90deg, #18c1e8, #0077b6);
+      color: white;
+      font-weight: 900;
+      padding: 18px;
+      border-radius: 16px;
+      text-align: center;
+      cursor: pointer;
+      transition: 0.25s;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .btn-main:hover { transform: translateY(-4px); box-shadow: 0 10px 30px rgba(24,193,232,0.25); }
+    .btn-gold {
+      background: linear-gradient(90deg, #d4af37, #aa8a2e);
+      color:#07111c;
+      font-weight: 900;
+      padding: 18px;
+      border-radius: 16px;
+      text-align:center;
+      cursor:pointer;
+      transition: 0.25s;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .btn-gold:hover { transform: translateY(-4px); box-shadow: 0 10px 30px rgba(212,175,55,0.22); }
+    .pill {
+      border:1px solid rgba(255,255,255,0.12);
+      background: rgba(0,0,0,0.25);
+      border-radius: 999px;
+      padding: 8px 12px;
+      display:flex;
+      align-items:center;
+      gap:10px;
+    }
+    .switch {
+      appearance:none;
+      width: 44px;
+      height: 26px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.12);
+      position: relative;
+      cursor:pointer;
+      border:1px solid rgba(255,255,255,0.16);
+      transition: .2s;
+    }
+    .switch:checked { background: rgba(24,193,232,0.35); border-color: rgba(24,193,232,0.55); }
+    .switch:before {
+      content:"";
+      position:absolute;
+      top:50%;
+      left:4px;
+      transform: translateY(-50%);
+      width:18px;
+      height:18px;
+      border-radius:999px;
+      background: rgba(255,255,255,0.82);
+      transition:.2s;
+    }
+    .switch:checked:before { left:22px; }
+
+    @media print {
+      .no-print { display:none !important; }
+      body { background:white !important; color:black !important; }
+      .card-premium { border:1px solid #ccc !important; background:white !important; color:black !important; box-shadow:none !important; }
+      .print-muted { color:#333 !important; }
+      .print-title { color:#000 !important; }
+      .print-border { border-color:#ddd !important; }
+      input { display:none !important; }
+    }
+  </style>
+</head>
+
+<body class="p-4 md:p-8">
+
+  <header class="max-w-6xl mx-auto flex justify-between items-center mb-10 no-print">
+    <div class="flex items-center gap-3 cursor-pointer" onclick="showTab('home')">
+      <div class="w-9 h-9 rounded bg-cyan-500 flex items-center justify-center font-black text-white italic">JF</div>
+      <div>
+        <div class="text-[11px] font-black uppercase tracking-widest">Equipe Dr. José. Falcão</div>
+        <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Sistema de Gestão de Casos</div>
+      </div>
+    </div>
+
+    <div class="flex gap-2">
+      <button onclick="showTab('home')" class="text-[10px] font-black uppercase border border-white/10 px-4 py-2 rounded-lg hover:bg-white/10">Início</button>
+      <button onclick="showTab('tower')" class="text-[10px] font-black uppercase border border-white/10 px-4 py-2 rounded-lg hover:bg-white/10">Control Tower</button>
+      <button onclick="showTab('novo-caso')" class="text-[10px] font-black uppercase border border-white/10 px-4 py-2 rounded-lg hover:bg-white/10">Analisar Caso</button>
+    </div>
+  </header>
+
+  <main class="max-w-5xl mx-auto">
+
+    <section id="tab-home" class="tab-content active">
+      <div class="min-h-[70vh] flex flex-col justify-center items-center gap-10">
+        <div class="text-center max-w-3xl">
+          <h1 class="text-5xl md:text-6xl font-black uppercase italic tracking-tighter leading-[0.95]">
+            Sistema de Gestão de Casos
+          </h1>
+          <p class="text-sm md:text-base mt-4 text-gray-400 font-semibold">
+            Equipe Dr. José Falcão • Fluxo de análise e caminhos de ação.
+          </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-3xl">
+          <div onclick="showTab('tower')" class="btn-main flex flex-col items-center justify-center gap-2 shadow-xl">
+            <span class="text-2xl italic">Control Tower</span>
+            <span class="text-[10px] opacity-80">Gestão e Indicadores</span>
+          </div>
+
+          <div onclick="showTab('novo-caso')" class="btn-gold flex flex-col items-center justify-center gap-2 shadow-xl">
+            <span class="text-2xl italic">Analisar Novo Caso</span>
+            <span class="text-[10px] opacity-90">Simulação + Garantias (relatório único)</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="tab-tower" class="tab-content">
+      <div class="flex justify-between items-end mb-8">
+        <div>
+          <h2 class="text-2xl font-black uppercase italic">Control Tower</h2>
+          <p class="text-[10px] text-cyan-500 font-black uppercase tracking-widest">Visão operacional</p>
+        </div>
+        <button onclick="updateTower()" class="bg-white text-black text-[10px] font-black px-4 py-2 rounded uppercase">Atualizar</button>
+      </div>
+
+ 
+        </div>
+  
+        <div class="card-premium p-4 border-l-2 border-yellow-400 text-center">
+          <p class="text-[9px] font-bold text-gray-500 uppercase">TRANSAÇÃO LEI 13.988/2020</p>
+          <p class="text-xl font-black italic" id="idx-neg">94%</p>
+        </div>
+        <div class="card-premium p-4 border-l-2 border-green-500 text-center">
+          <p class="text-[9px] font-bold text-gray-500 uppercase">NJP - DUAS ETAPAS</p>
+          <p class="text-xl font-black italic" id="idx-pre">89.4%</p>
+        </div>
+     
+        </div>
+        <div class="card-premium p-4 border-l-2 border-red-500 text-center">
+          <p class="text-[9px] font-bold text-gray-500 uppercase">REENQUADRAMENTO</p>
+          <p class="text-xl font-black italic" id="idx-per">91%</p>
+        </div>
+        <div class="card-premium p-4 border-l-2 border-white text-center">
+          <p class="text-[9px] font-bold text-gray-500 uppercase">Total Casos</p>
+          <p class="text-xl font-black italic" id="idx-casos">14.280</p>
+        </div> 
+      </div>
+
+      <div class="card-premium p-6">
+        <h4 class="text-xs font-black uppercase mb-4 opacity-60 italic">Pulso Operacional</h4>
+        <div class="h-2 bg-white/5 rounded-full overflow-hidden mb-2">
+          <div class="h-full bg-cyan-500 w-[92%]"></div>
+        </div>
+        <p class="text-[10px] font-bold uppercase tracking-widest">Indicador de estabilidade</p>
+      </div>
+    </section>
+
+    <section id="tab-novo-caso" class="tab-content">
+      <div class="text-center mb-8">
+        <h2 class="text-2xl font-black uppercase italic">Análise de Novo Caso</h2>
+        <p class="text-xs text-gray-500 font-bold uppercase tracking-widest mt-2">
+          Preenche os dados • Marca as frentes • Gera um relatório único
+        </p>
+      </div>
+
+      <div class="card-premium p-8 mb-6 no-print">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <input type="text" id="c_nome" placeholder="Nome da Empresa" oninput="syncHeader()">
+          <input type="text" id="c_cnpj" placeholder="CNPJ" oninput="maskCNPJ(this); syncHeader()">
+          <input type="text" id="c_valor" placeholder="Valor do Débito (R$)" oninput="maskMoney(this); calcAll(); syncHeader()">
+        </div>
+
+        <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="pill">
+            <input id="flag_negociar" type="checkbox" class="switch" onchange="toggleModules(); calcAll();">
+            <div>
+              <div class="text-[11px] font-black uppercase tracking-widest text-cyan-300">Negociar</div>
+              <div class="text-[10px] text-gray-400 font-semibold">ANALISE DE PARCELAMENTO</div>
+            </div>
+          </div>
+
+          <div class="pill">
+            <input id="flag_execucao" type="checkbox" class="switch" onchange="toggleModules(); calcAll();">
+            <div>
+              <div class="text-[11px] font-black uppercase tracking-widest text-yellow-200">Defesa em Execução</div>
+              <div class="text-[10px] text-gray-400 font-semibold">BLINDAGEM PATRIMONIAL</div>
+            </div>
+          </div>
+        </div>
+
+        <div id="exec-flags" class="mt-6 hidden">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="pill">
+              <input id="f_citacao" type="checkbox" class="switch" onchange="renderExecOptions()">
+              <div>
+                <div class="text-[11px] font-black uppercase tracking-widest">Houve citação?</div>
+                <div class="text-[10px] text-gray-400 font-semibold">Define as opções exibidas</div>
+              </div>
+            </div>
+
+            <div class="pill">
+              <input id="f_protesto" type="checkbox" class="switch" onchange="syncHeader()">
+              <div>
+                <div class="text-[11px] font-black uppercase tracking-widest">Teve protesto?</div>
+                <div class="text-[10px] text-gray-400 font-semibold">Sinalização no relatório</div>
+              </div>
+            </div>
+
+            <div class="pill">
+              <input id="f_cancel" type="checkbox" class="switch" onchange="syncHeader()">
+              <div>
+                <div class="text-[11px] font-black uppercase tracking-widest">Histórico de cancelamento?</div>
+                <div class="text-[10px] text-gray-400 font-semibold">Sinalização no relatório</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="print-header" class="card-premium p-6 mb-6">
+        <div class="flex items-start justify-between gap-4">
+          <div>
+            <div class="text-[10px] font-black uppercase tracking-widest print-muted">Equipe Dr. José Falcão</div>
+            <div class="text-2xl font-black uppercase italic print-title">Relatório de Análise</div>
+            <div class="text-[11px] mt-2 text-gray-300 print-muted">
+              Empresa: <b id="h_nome">—</b> • CNPJ: <b id="h_cnpj">—</b> • Débito: <b id="h_val">—</b>
+            </div>
+            <div class="text-[10px] mt-1 text-gray-400 print-muted">
+              Gerado em: <b id="h_data">—</b>
+            </div>
+          </div>
+
+          <div class="text-right">
+            <div class="text-[10px] font-black uppercase tracking-widest print-muted">Frentes Selecionadas</div>
+            <div class="mt-2 flex flex-col gap-1 items-end">
+              <span id="tag_neg" class="text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full bg-cyan-500/20 border border-cyan-500/30 hidden">Negociar</span>
+              <span id="tag_exe" class="text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full bg-yellow-400/20 border border-yellow-400/30 hidden">Defesa em Execução</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="print-area-all" class="space-y-6">
+
+        <div id="mod-neg" class="hidden">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="card-premium p-6 border-t-4 border-red-500/50">
+              <h3 class="text-xs font-black uppercase text-red-400 mb-6">Parcelamento Convencional</h3>
+              <div class="space-y-4 text-sm">
+                <div class="flex justify-between"><span>Entrada (10%):</span> <b id="n_c_ent">R$ 0,00</b></div>
+                <div class="flex justify-between"><span>Prazo:</span> <b>60 meses</b></div>
+                <div class="flex justify-between border-t border-white/5 pt-4 print-border">
+                  <span class="font-black uppercase">Parcela estimada:</span>
+                  <span class="text-lg font-black text-red-400" id="n_c_parc">R$ 0,00</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="card-premium p-6 border-4 border-cyan-500/80 shadow-2xl">
+              <h3 class="text-xs font-black uppercase text-cyan-300 mb-4 italic">Parcelamento com Enquadramento</h3>
+
+              <div class="bg-black/35 p-3 rounded-xl mb-4 no-print">
+                <div class="flex items-center justify-between">
+                  <div class="text-[10px] font-black uppercase tracking-widest text-gray-300">Prazo (parcelas)</div>
+                  <div class="text-[10px] font-black uppercase tracking-widest text-cyan-300"><span id="n_txt_meses">145</span>x</div>
+                </div>
+                <input type="range" id="n_meses" min="1" max="145" value="145" class="w-full accent-cyan-500 mt-2" oninput="calcNeg()">
+              </div>
+
+              <div class="space-y-4 text-sm">
+                <div class="flex justify-between text-yellow-200">
+                  <span>Economia estimada:</span>
+                  <b id="n_f_eco" class="text-lg">R$ 0,00</b>
+                </div>
+                <div class="flex justify-between items-center pt-2">
+                  <span class="font-black uppercase">Parcela estimada:</span>
+                  <span class="text-2xl font-black text-cyan-300" id="n_f_parc">R$ 0,00</span>
+                </div>
+              </div>
+
+              <p class="text-[10px] mt-5 text-gray-400 font-bold uppercase tracking-widest print-muted">
+                Aviso: Advogado, contate a Procuradoria para avaliar viabilidade de NJP.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div id="mod-exec" class="hidden">
+          <div class="card-premium p-6">
+            <div class="flex items-start justify-between gap-4">
+              <div>
+                <h3 class="text-sm font-black uppercase italic">Garantias e Alternativas</h3>
+
+                <!-- TEXTO EXPLICATIVO (como tu pediu) -->
+                <div class="mt-3 text-[12px] leading-relaxed text-gray-200 print-muted space-y-2">
+                  <p>
+                    <b>Diferenças práticas:</b> pagamento integral exige desembolso imediato; carta bancária normalmente demanda cobertura parcial do débito;
+                    <b class="text-red-300">imóvel próprio</b> pode expor o patrimônio e acelerar constrição; já o <b class="text-green-300">imóvel de terceiro</b> permite estruturar a garantia
+                    com custo previsível e manter o patrimônio da empresa mais protegido.
+                  </p>
+                  <p class="text-green-300 font-black uppercase tracking-widest">
+                    Melhor caminho: Imóvel de terceiro.
+                  </p>
+                  <p class="text-yellow-200 font-black uppercase tracking-widest">
+                    Alerta: poucas matrículas disponíveis para uso. Faça reserva imediata.
+                  </p>
+                </div>
+              </div>
+
+              <div class="text-right">
+                <div class="text-[12px] font-black uppercase tracking-widest print-muted">Sinalizadores</div>
+                <div class="mt-2 flex flex-col gap-1 items-end">
+                  <span id="tag_cit" class="text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full bg-white/5 border border-white/10 hidden">Citação: Sim</span>
+                  <span id="tag_pro" class="text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full bg-red-500/15 border border-red-500/25 hidden">Protesto: Sim</span>
+                  <span id="tag_can" class="text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full bg-orange-500/15 border border-orange-500/25 hidden">Histórico: Cancelamento</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div id="exec-options" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+
+          <div class="card-premium p-6">
+            <h4 class="text-[11px] font-black uppercase tracking-widest opacity-80">Nota sobre Parcelamento</h4>
+            <p class="text-[11px] mt-2 text-gray-300 print-muted">
+              <b>Parcelamento:</b> <span class="text-yellow-200 font-bold">contate a Procuradoria para avaliar viabilidade de NJP</span>.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-8 no-print">
+        <button onclick="window.print()" class="w-full btn-main text-sm">Gerar Relatório em PDF (Simulação + Garantias)</button>
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    function showTab(id) {
+      document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+      document.getElementById('tab-' + id).classList.add('active');
+      window.scrollTo(0, 0);
+      if (id === 'novo-caso') {
+        syncHeader();
+        toggleModules();
+        renderExecOptions();
+        calcAll();
+      }
+    }
+
+    function maskMoney(i) {
+      let v = i.value.replace(/\D/g, "");
+      v = (v / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+      i.value = v !== "0,00" ? "R$ " + v : "";
+    }
+
+    function maskCNPJ(i) {
+      let v = i.value.replace(/\D/g, "");
+      if (v.length > 14) v = v.slice(0, 14);
+      v = v.replace(/^(\d{2})(\d)/, "$1.$2");
+      v = v.replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3");
+      v = v.replace(/\.(\d{3})(\d)/, ".$1/$2");
+      v = v.replace(/(\d{4})(\d)/, "$1-$2");
+      i.value = v;
+    }
+
+    function parseVal(v) {
+      return parseFloat((v || "").replace(/[^\d,]/g, "").replace(",", ".")) || 0;
+    }
+
+    const fmt = (v) => (v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+    function updateTower() {
+      document.getElementById('idx-exe').innerText = Math.floor(Math.random() * (92 - 85) + 85) + "%";
+      document.getElementById('idx-neg').innerText = Math.floor(Math.random() * (98 - 90) + 90) + "%";
+      document.getElementById('idx-pre').innerText = (Math.random() * (15 - 10) + 10).toFixed(1) + "%";
+      document.getElementById('idx-per').innerText = Math.floor(Math.random() * (95 - 88) + 88) + "%";
+    }
+
+    function nowBR() {
+      try { return new Date().toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }); }
+      catch(e) { return new Date().toLocaleString(); }
+    }
+
+    function syncHeader() {
+      const nome = (document.getElementById('c_nome').value || "—").trim() || "—";
+      const cnpj = (document.getElementById('c_cnpj').value || "—").trim() || "—";
+      const val  = document.getElementById('c_valor').value || "—";
+      document.getElementById('h_nome').innerText = nome;
+      document.getElementById('h_cnpj').innerText = cnpj;
+      document.getElementById('h_val').innerText  = val.trim() || "—";
+      document.getElementById('h_data').innerText = nowBR();
+
+      const pro = document.getElementById('f_protesto')?.checked;
+      const can = document.getElementById('f_cancel')?.checked;
+      document.getElementById('tag_pro').classList.toggle('hidden', !pro);
+      document.getElementById('tag_can').classList.toggle('hidden', !can);
+    }
+
+    function toggleModules() {
+      const neg = document.getElementById('flag_negociar').checked;
+      const exe = document.getElementById('flag_execucao').checked;
+
+      document.getElementById('mod-neg').classList.toggle('hidden', !neg);
+      document.getElementById('mod-exec').classList.toggle('hidden', !exe);
+
+      document.getElementById('tag_neg').classList.toggle('hidden', !neg);
+      document.getElementById('tag_exe').classList.toggle('hidden', !exe);
+
+      document.getElementById('exec-flags').classList.toggle('hidden', !exe);
+
+      syncHeader();
+      renderExecOptions();
+    }
+
+    function calcNeg() {
+      const v = parseVal(document.getElementById('c_valor').value);
+      const m = parseInt(document.getElementById('n_meses').value);
+
+      const cEnt = v * 0.10;
+      document.getElementById('n_c_ent').innerText  = fmt(cEnt);
+      document.getElementById('n_c_parc').innerText = fmt((v - cEnt) / 60);
+
+      const fEco = v * 0.45;
+      document.getElementById('n_f_eco').innerText  = fmt(fEco);
+      document.getElementById('n_f_parc').innerText = fmt((v - fEco) / (m || 1));
+      document.getElementById('n_txt_meses').innerText = m || 145;
+    }
+
+    function execCard({ title, value, note, accent="border-white/10", badge="" }) {
+      return `
+        <div class="card-premium p-6 border ${accent}">
+          <div class="flex items-start justify-between gap-3">
+            <p class="text-[10px] font-black uppercase tracking-widest opacity-80">${title}</p>
+            ${badge ? `<span class="text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full bg-white/5 border border-white/10">${badge}</span>` : ""}
+          </div>
+          <p class="text-xl font-black mt-3">${value}</p>
+          <p class="text-[10px] mt-2 text-gray-400 font-bold uppercase tracking-widest print-muted">${note}</p>
+        </div>
+      `;
+    }
+
+    function renderExecOptions() {
+      if (!document.getElementById('flag_execucao').checked) return;
+
+      const v = parseVal(document.getElementById('c_valor').value);
+      const cit = document.getElementById('f_citacao')?.checked;
+      document.getElementById('tag_cit').classList.toggle('hidden', !cit);
+
+      const wrap = document.getElementById('exec-options');
+      wrap.innerHTML = "";
+      const badge = cit ? "Após citação" : "Pré-citação";
+
+      wrap.innerHTML += execCard({
+        title: "Pagamento Integral",
+        value: fmt(v),
+        note: "Desembolso imediato",
+        accent: "border-red-500/20",
+        badge
+      });
+
+      wrap.innerHTML += execCard({
+        title: "Parcelamento",
+        value: "—",
+        note: "Contate a Procuradoria para avaliar viabilidade de NJP",
+        accent: "border-yellow-400/20",
+        badge
+      });
+
+      wrap.innerHTML += execCard({
+        title: "Carta Bancária",
+        value: fmt(v * 0.80),
+        note: "Garantia (80% do débito)",
+        accent: "border-cyan-500/25",
+        badge
+      });
+
+      // Imóvel próprio — alerta máximo
+      wrap.innerHTML += `
+        <div class="card-premium p-6 border-2 border-red-500 shadow-xl">
+          <div class="flex items-start justify-between gap-3">
+            <p class="text-[10px] font-black uppercase tracking-widest text-red-300">Imóvel Próprio</p>
+            <span class="text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full bg-red-500/20 border border-red-500/30">ALERTA</span>
+          </div>
+          <p class="text-2xl font-black mt-3 text-red-400">RISCO DE PENHORA IMEDIATA</p>
+          <p class="text-[11px] mt-2 text-gray-200 font-bold uppercase tracking-widest">
+            Exposição direta do patrimônio.
+          </p>
+        </div>
+      `;
+
+      // Garantia de terceiros — destaque em verde + chamada forte
+      const ter = v * 0.11;
+      wrap.innerHTML += `
+        <div class="card-premium p-6 border-2 border-green-500/60 shadow-xl md:col-span-2">
+          <div class="flex items-start justify-between gap-3">
+            <p class="text-[10px] font-black uppercase tracking-widest text-green-300">Garantia de Terceiros (Imóvel)</p>
+            <span class="text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full bg-green-500/15 border border-green-500/25">RECOMENDADO</span>
+          </div>
+
+          <div class="mt-3 p-4 rounded-xl bg-green-500/10 border border-green-500/20">
+            <p class="text-[11px] font-black uppercase tracking-widest text-green-300">
+              Aplique garantia de terceiro para maior economia.
+            </p>
+            <p class="text-[10px] mt-2 text-yellow-200 font-black uppercase tracking-widest">
+              Alerta: poucas matrículas disponíveis para uso. Faça reserva imediata.
+            </p>
+          </div>
+
+          <p class="text-xl font-black mt-4">${fmt(ter)}</p>
+          <p class="text-[10px] mt-2 text-gray-400 font-bold uppercase tracking-widest print-muted">
+            Custo: 11% do débito
+          </p>
+
+          <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3 border-t border-white/10 pt-4 print-border">
+            <div class="flex justify-between text-[11px]">
+              <span class="text-gray-300 print-muted">12x de</span>
+              <b>${fmt(ter / 12)}</b>
+            </div>
+            <div class="flex justify-between text-[11px]">
+              <span class="text-gray-300 print-muted">À vista (-20%)</span>
+              <b class="text-green-400">${fmt(ter * 0.80)}</b>
+            </div>
+          </div>
+
+          <p class="text-[10px] mt-3 text-gray-400 font-bold uppercase tracking-widest print-muted">
+            Exige validação documental e anuência do terceiro.
+          </p>
+        </div>
+      `;
+
+      const pro = document.getElementById('f_protesto')?.checked;
+      const can = document.getElementById('f_cancel')?.checked;
+      document.getElementById('tag_pro').classList.toggle('hidden', !pro);
+      document.getElementById('tag_can').classList.toggle('hidden', !can);
+
+      syncHeader();
+    }
+
+    function calcAll() {
+      if (document.getElementById('flag_negociar').checked) calcNeg();
+      if (document.getElementById('flag_execucao').checked) renderExecOptions();
+      syncHeader();
+    }
+
+    (function init(){
+      updateTower();
+      syncHeader();
+      toggleModules();
+      renderExecOptions();
+      calcAll();
+    })();
+  </script>
+</body>
+</html>
