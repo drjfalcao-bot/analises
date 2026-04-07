@@ -300,6 +300,26 @@
         </div>
       </div>
 
+      <!-- DIAGNÓSTICO AUTOMÁTICO -->
+      <div class="card-premium p-8 mb-6 no-print">
+        <div class="flex items-start justify-between gap-4 flex-col md:flex-row">
+          <div>
+            <h3 class="text-sm font-black uppercase tracking-widest text-cyan-300">Produção Automática da Análise</h3>
+            <p class="text-[11px] text-gray-400 font-semibold mt-1">
+              Cole um resumo do caso ou trecho do processo. O sistema gera um diagnóstico e 3 estratégias possíveis.
+            </p>
+          </div>
+          <button onclick="gerarDiagnosticoAutomatico()" class="bg-cyan-500 text-white text-[10px] font-black px-4 py-3 rounded-xl uppercase tracking-widest">
+            Gerar Diagnóstico
+          </button>
+        </div>
+
+        <div class="mt-4 space-y-4">
+          <textarea id="c_resumo_auto" rows="7" placeholder="Ex.: Empresa com débito inscrito, já citada em execução, teve protesto e precisa reduzir impacto no caixa..."></textarea>
+          <div id="diag_auto_output" class="hidden border border-cyan-500/25 rounded-2xl p-5 bg-cyan-500/5"></div>
+        </div>
+      </div>
+
       <!-- HEADER RELATÓRIO -->
       <div id="print-header" class="card-premium p-6 mb-6">
         <div class="flex items-start justify-between gap-4">
@@ -752,6 +772,105 @@
       if (document.getElementById('flag_execucao').checked) renderExecOptions();
       syncHeader();
       autoSaveLeadDebounced();
+    }
+
+    // ==========================
+    // Diagnóstico automático (heurístico)
+    // ==========================
+    function normalizarTxt(t){
+      return (t || "")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase();
+    }
+    function temAlgum(txt, lista){
+      return lista.some(w => txt.includes(w));
+    }
+    function gerarDiagnosticoAutomatico(){
+      const bruto = document.getElementById('c_resumo_auto').value || "";
+      const txt = normalizarTxt(bruto);
+      const out = document.getElementById('diag_auto_output');
+
+      if (bruto.trim().length < 40){
+        out.classList.remove('hidden');
+        out.innerHTML = `<p class="text-[11px] font-bold uppercase tracking-widest text-yellow-200">Forneça mais contexto (mínimo ~40 caracteres) para um diagnóstico melhor.</p>`;
+        return;
+      }
+
+      const sinais = {
+        execucao: temAlgum(txt, ["execucao fiscal", "penhora", "citacao", "bloqueio", "sisba", "bacenjud"]),
+        protesto: temAlgum(txt, ["protesto", "cartorio"]),
+        caixa: temAlgum(txt, ["caixa", "fluxo de caixa", "sem liquidez", "capital de giro"]),
+        parcelamento: temAlgum(txt, ["parcelamento", "transacao", "negociacao", "acordo"]),
+        riscoPatrimonial: temAlgum(txt, ["imovel", "patrimonio", "socio", "constricao"]),
+      };
+
+      let diagnostico = "Cenário de regularização preventiva com foco em previsibilidade financeira.";
+      if (sinais.execucao && sinais.riscoPatrimonial) {
+        diagnostico = "Cenário contencioso com risco patrimonial relevante e necessidade de blindagem imediata.";
+      } else if (sinais.execucao) {
+        diagnostico = "Cenário contencioso em execução fiscal com necessidade de resposta rápida.";
+      } else if (sinais.caixa && sinais.parcelamento) {
+        diagnostico = "Cenário de stress de caixa com necessidade de renegociação estruturada do passivo.";
+      } else if (sinais.protesto) {
+        diagnostico = "Cenário de restrição reputacional/comercial por protesto, com foco em descompressão de risco.";
+      }
+
+      const estrategias = [
+        {
+          titulo: "Estratégia 1 — Negociação técnica do passivo",
+          objetivo: "Reduzir pressão de curto prazo e trazer previsibilidade de pagamento.",
+          acoes: [
+            "Mapear saldo elegível e simular cenário de entrada + prazo estendido.",
+            "Priorizar modalidade com menor impacto mensal no caixa.",
+            "Documentar gatilhos de revisão caso haja oscilação de faturamento."
+          ],
+          risco: "Médio (depende de aderência ao plano financeiro)."
+        },
+        {
+          titulo: "Estratégia 2 — Defesa e garantia inteligente",
+          objetivo: "Evitar constrições agressivas enquanto o caso é estabilizado.",
+          acoes: [
+            "Conferir estágio processual (pré ou pós-citação) e calibrar peticionamento.",
+            "Comparar custo/risco entre garantia bancária, depósito e garantia de terceiro.",
+            "Evitar exposição de ativo próprio quando houver alternativa juridicamente viável."
+          ],
+          risco: sinais.execucao ? "Alto se não houver resposta tempestiva." : "Baixo a médio."
+        },
+        {
+          titulo: "Estratégia 3 — Plano executivo de 90 dias",
+          objetivo: "Transformar a análise em rotina operacional com acompanhamento semanal.",
+          acoes: [
+            "Definir responsável jurídico, financeiro e diretoria para governança do caso.",
+            "Criar cronograma com marcos: protocolo, negociação, validação documental e fechamento.",
+            "Monitorar KPIs: economia potencial, parcela alvo e risco de constrição."
+          ],
+          risco: "Baixo (com disciplina de execução)."
+        }
+      ];
+
+      out.classList.remove('hidden');
+      out.innerHTML = `
+        <div class="space-y-4">
+          <div>
+            <p class="text-[10px] font-black uppercase tracking-widest text-cyan-300">Diagnóstico Sugerido</p>
+            <p class="text-sm font-semibold mt-1">${diagnostico}</p>
+          </div>
+          ${estrategias.map(e => `
+            <div class="border border-white/10 rounded-xl p-4 bg-black/20">
+              <p class="text-[11px] font-black uppercase tracking-widest">${e.titulo}</p>
+              <p class="text-[11px] mt-2"><b>Objetivo:</b> ${e.objetivo}</p>
+              <ul class="list-disc pl-5 mt-2 text-[11px] space-y-1">
+                ${e.acoes.map(a => `<li>${a}</li>`).join("")}
+              </ul>
+              <p class="text-[10px] mt-3 text-yellow-200 font-black uppercase tracking-widest">Risco: ${e.risco}</p>
+            </div>
+          `).join("")}
+          <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
+            Sugestão automática inicial. Validar com revisão jurídica antes de decisão final.
+          </p>
+        </div>
+      `;
     }
 
     // ==========================
